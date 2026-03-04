@@ -1,0 +1,9 @@
+{% extends "layout.html" %}
+{% block content %}
+ {% for entry in entries %}
+        <h1> {{ entry.date }} </h1>
+        <p>Category: {{ entry.category }}</p>
+        <p>Debit: {{ entry.debit }}</p>
+        <p>Credit: {{ entry.credit }}</p>
+    {% endfor %}
+{% endblock content %}
