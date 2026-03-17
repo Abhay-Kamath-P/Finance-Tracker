@@ -1,9 +1,28 @@
 {% extends "layout.html" %}
 {% block content %}
- {% for entry in entries %}
-        <h1> {{ entry.date }} </h1>
+{% set prev = None %}
+{% for entry in entries.items %}
+    {% set day = entry.date.strftime('%Y-%m-%d') %}
+        {% if day != prev_date %}
+            <h3 class="border-bottom pb-1">{{ day }}</h3>
+            {% set prev = day %}
+        {% endif %}
         <p>Category: {{ entry.category }}</p>
-        <p>Debit: {{ entry.debit }}</p>
-        <p>Credit: {{ entry.credit }}</p>
-    {% endfor %}
+        {% if entry.type == 'income' %}
+            <p class="text-success">Income: +{{ entry.amount }}</p>
+        {% else %}
+            <p class="text-danger">Expense: -{{ entry.amount }}</p>
+        {% endif %}
+{% endfor %}
+{% for page_num in entries.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+    {% if page_num %}
+        {% if entries.page == page_num %}
+            <a class="btn btn-info mb-4 mr-2" href = "{{url_for('home', page=page_num)}}">{{ page_num }}</a>
+        {% else %}
+            <a class="btn btn-outline-info mb-4 mr-2" href = "{{url_for('home', page=page_num)}}">{{ page_num }}</a>
+        {% endif %}
+    {% else %}
+
+    {% endif %}
+{% endfor %}
 {% endblock content %}

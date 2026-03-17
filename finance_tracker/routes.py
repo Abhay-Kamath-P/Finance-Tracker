@@ -1,37 +1,21 @@
 from flask import  render_template, url_for, flash, redirect, request
 from finance_tracker.models import User, Entry
-from finance_tracker.forms import regForm, loginForm, updateAccountForm
+from finance_tracker.forms import regForm, loginForm, updateAccountForm, EntryForm
 from finance_tracker import app, db, bcrypt
 from flask_login import login_user, current_user, logout_user, login_required
 import secrets
 from PIL import Image
 import os
 
-entries = [
-    {
-        'debit' : 180,
-        'credit' : 0,
-        'category' : 'food',
-        'date' : '10 Feb, 2026'
-    },
-    {
-        'debit' : 150,
-        'credit' : 0,
-        'category' : 'travel',
-        'date' : '10 Feb, 2026'
-    },
-    {
-        'debit' : 0,
-        'credit' : 2000,
-        'category' : 'monthly',
-        'date' : '1 Mar, 2026'
-    }
-]
+
 
 @app.route("/")
 @app.route("/home")
+@login_required
 def home():
-    return render_template('home.html', entries = entries, title = "Home")
+    page = request.args.get('page', 1, type=int)
+    entries = Entry.query.filter_by(user_id=current_user.id).order_by(Entry.date.desc()).paginate(page=page, per_page=10)
+    return render_template('home.html', entries=entries, title="Home")
 
 @app.route("/about")
 def about():
@@ -82,8 +66,6 @@ def save_picture(form_picture):
     i.thumbnail(output_size)
     i.save(picture_path)
 
-    form_picture.save(picture_path)
-
     return picture_fn
 
 
@@ -105,3 +87,17 @@ def account():
         form.email.data = current_user.email
     image_file = url_for('static', filename = 'profile_pics/' + current_user.image_file)
     return render_template('account.html', title = 'Account', image_file = image_file, form = form)
+
+@app.route("/entry/new", methods=['GET', 'POST'])
+@login_required
+def new_entry():
+    form = EntryForm()
+    if form.validate_on_submit():
+        category_label = dict(form.category.choices).get(form.category.data, form.category.data)
+        entry = Entry(amount=form.amount.data, type=form.type.data, category=category_label, user_id=current_user.id, note=form.note.data)
+        db.session.add(entry)
+        db.session.commit()
+        flash('Entry has been created.', 'success')
+        return redirect(url_for('home'))
+    return render_template('create_entry.html', title = 'New Entry', form = form)
+
